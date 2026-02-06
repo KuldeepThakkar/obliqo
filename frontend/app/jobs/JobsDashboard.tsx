@@ -27,7 +27,9 @@ export default function JobsDashboard() {
         setError('');
         try {
             const response = await api.getJobFeed(1, 50, filter || undefined);
-            setJobs(response.jobs);
+            // Sort jobs by fit_score in descending order
+            const sortedJobs = [...response.jobs].sort((a, b) => b.fit_score - a.fit_score);
+            setJobs(sortedJobs);
             if (response.jobs.length > 0 && !selectedJob) {
                 setSelectedJob(response.jobs[0]);
             }
@@ -179,7 +181,7 @@ export default function JobsDashboard() {
             {/* Main Content - Split View */}
             <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-6">
                 {/* Job List */}
-                <div className="space-y-4 lg:max-h-[calc(100vh-300px)] lg:overflow-y-auto">
+                <div className="space-y-4 lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
                     {jobs.length === 0 ? (
                         <div className="glass-card p-8 text-center">
                             <p className="text-gray-300">No jobs match this filter.</p>
@@ -221,6 +223,13 @@ export default function JobsDashboard() {
 
                             <DecisionBadge decision={selectedJob.decision} className="mb-4" />
                             <p className="text-gray-200 mb-4">{selectedJob.decision_reason}</p>
+
+                            {/* Apply Now button - only show for Apply or Wait decisions */}
+                            {(selectedJob.decision === 'Apply' || selectedJob.decision === 'Wait') && (
+                                <button className="w-full btn-primary mb-6 py-3 text-lg font-semibold flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg transition-all transform hover:scale-[1.02]">
+                                    🚀 Apply Now
+                                </button>
+                            )}
 
                             <div className="flex gap-4 mb-6">
                                 <div className="flex-1 bg-white/5 rounded-lg p-3 text-center">
