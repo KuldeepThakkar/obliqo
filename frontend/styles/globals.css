@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white font-sans min-h-screen;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl;
+  }
+  
+  /* Button styles */
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition-all duration-300 backdrop-blur-lg;
+  }
+  
+  /* Decision badges */
+  .badge-apply {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-apply/20 text-apply font-semibold rounded-full border border-apply/50 backdrop-blur-sm;
+  }
+  
+  .badge-wait {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-wait/20 text-wait font-semibold rounded-full border border-wait/50 backdrop-blur-sm;
+  }
+  
+  .badge-skip {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-skip/20 text-skip font-semibold rounded-full border border-skip/50 backdrop-blur-sm;
+  }
+  
+  .badge-avoid {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-avoid/20 text-avoid font-semibold rounded-full border border-avoid/50 backdrop-blur-sm;
+  }
+  
+  /* Skill badges */
+  .skill-badge {
+    @apply inline-block px-3 py-1 bg-purple-500/30 text-purple-200 text-sm font-medium rounded-full border border-purple-400/30;
+  }
+  
+  .skill-badge-matched {
+    @apply inline-block px-3 py-1 bg-apply/30 text-apply text-sm font-medium rounded-full border border-apply/50;
+  }
+  
+  .skill-badge-missing {
+    @apply inline-block px-3 py-1 bg-wait/30 text-wait text-sm font-medium rounded-full border border-wait/50;
+  }
+  
+  /* Input fields */
+  .input-field {
+    @apply w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-lg transition-all;
+  }
+  
+  /* Section headers */
+  .section-header {
+    @apply text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-6;
+  }
+  
+  /* Animated gradient border */
+  .gradient-border {
+    @apply relative overflow-hidden rounded-2xl;
+  }
+  
+  .gradient-border::before {
+    content: '';
+    @apply absolute inset-0 rounded-2xl;
+    background: linear-gradient(45deg, #a855f7, #ec4899, #06b6d4, #10b981);
+    background-size: 300% 300%;
+    animation: gradientShift 3s ease infinite;
+    z-index: -1;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-900/50;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-purple-500/50 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-purple-500/70;
+}
+
+/* Loading animation for fit score */
+@keyframes fillCircle {
+  from {
+    stroke-dashoffset: 440;
+  }
+}
