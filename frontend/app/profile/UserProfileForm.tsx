@@ -103,6 +103,11 @@ export default function UserProfileForm() {
     const [rolesInput, setRolesInput] = useState('');
     const [locationsInput, setLocationsInput] = useState('');
 
+    // CV upload states
+    const [cvUploading, setCvUploading] = useState(false);
+    const [cvFilename, setCvFilename] = useState('');
+    const [cvError, setCvError] = useState('');
+
     useEffect(() => {
         api.getProfile()
             .then(data => {
@@ -251,7 +256,71 @@ export default function UserProfileForm() {
                             </div>
                         </section>
 
-                        {/* 2. Social Profiles */}
+                        {/* 2. CV/Resume Upload */}
+                        <section className="space-y-4">
+                            <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">Upload CV/Resume</h3>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+
+                                        setCvUploading(true);
+                                        setCvError('');
+
+                                        try {
+                                            const result = await api.uploadCV(file);
+                                            setCvFilename(result.filename);
+                                            setProfile(prev => ({
+                                                ...prev,
+                                                resume_url: result.file_url,
+                                                has_uploaded_resume: true
+                                            }));
+                                        } catch (err: any) {
+                                            setCvError(err.message || 'Failed to upload CV');
+                                        } finally {
+                                            setCvUploading(false);
+                                        }
+                                    }}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    disabled={cvUploading}
+                                />
+                                <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${cvUploading ? 'border-purple-400 bg-purple-500/10' :
+                                        profile.has_uploaded_resume ? 'border-green-400 bg-green-500/10' :
+                                            'border-white/20 hover:border-purple-400 hover:bg-purple-500/5'
+                                    }`}>
+                                    {cvUploading ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="animate-spin w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full"></div>
+                                            <p className="text-purple-300">Uploading your CV...</p>
+                                        </div>
+                                    ) : profile.has_uploaded_resume ? (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="text-4xl">✅</div>
+                                            <p className="text-green-300 font-semibold">CV Uploaded Successfully!</p>
+                                            <p className="text-gray-400 text-sm">{cvFilename || 'Resume uploaded'}</p>
+                                            <p className="text-purple-400 text-sm mt-2">Click to upload a different file</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="text-4xl">📄</div>
+                                            <p className="text-white font-semibold">Drag & drop your CV here</p>
+                                            <p className="text-gray-400 text-sm">or click to browse</p>
+                                            <p className="text-gray-500 text-xs mt-2">Supported formats: PDF, DOC, DOCX</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {cvError && (
+                                <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
+                                    <p className="text-red-200 text-sm">{cvError}</p>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* 3. Social Profiles */}
                         <section className="space-y-4">
                             <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">Social Profiles</h3>
                             <div className="grid md:grid-cols-2 gap-4">

@@ -278,6 +278,24 @@ class ApiClient {
     async getStats(): Promise<StatsResponse> {
         return this.request<StatsResponse>('/api/stats');
     }
+
+    // CV Upload endpoint
+    async uploadCV(file: File): Promise<{ message: string; filename: string; file_url: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${this.baseUrl}/api/upload-cv`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: response.statusText }));
+            throw new Error(error.detail || 'Failed to upload CV');
+        }
+
+        return response.json();
+    }
 }
 
 export const api = new ApiClient();

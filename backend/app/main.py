@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict
 import json
@@ -34,6 +35,9 @@ current_profile: Optional[UserProfile] = None
 jobs_database: List[Job] = []
 job_embeddings_cache: Dict[str, object] = {}  # job_id -> numpy array
 
+# Create uploads directory if it doesn't exist
+UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 @app.on_event("startup")
 async def load_jobs():
@@ -69,6 +73,42 @@ async def root():
         "message": "ApplyLess API is running",
         "version": "1.0.0",
         "jobs_loaded": len(jobs_database)
+    }
+
+
+@app.post("/api/upload-cv")
+async def upload_cv(file: UploadFile = File(...)):
+    """Upload a CV/Resume file"""
+    # Validate file type
+    allowed_extensions = {".pdf", ".doc", ".docx"}
+    file_ext = Path(file.filename).suffix.lower()
+    
+    if file_ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
+        )
+    
+    # Generate unique filename
+    import uuid
+    unique_filename = f"{uuid.uuid4()}{file_ext}"
+    file_path = UPLOAD_DIR / unique_filename
+    
+    # Save file
+    try:
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    
+    # Return the URL to access the file
+    file_url = f"/uploads/{unique_filename}"
+    
+    return {
+        "message": "CV uploaded successfully",
+        "filename": file.filename,
+        "file_url": file_url
     }
 
 
@@ -227,6 +267,10 @@ async def get_stats():
         "decisions": decisions,
         "recommendation": f"Focus on the {decisions['Apply']} jobs marked 'Apply'"
     }
+
+
+# Mount static files for serving uploaded CVs (mounted after all routes)
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 
 if __name__ == "__main__":
