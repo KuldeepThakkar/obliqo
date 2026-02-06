@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Optional
+from typing import List, Optional, Dict
 import json
 from pathlib import Path
 
@@ -44,22 +44,22 @@ async def load_jobs():
     
     # Initialize the semantic matcher (loads the model)
     matcher = get_matcher()
-    print("✅ Semantic matcher initialized")
+    print("[SUCCESS] Semantic matcher initialized")
     
     if data_path.exists():
         with open(data_path, 'r', encoding='utf-8') as f:
             jobs_data = json.load(f)
             jobs_database = [Job(**job) for job in jobs_data]
-        print(f"✅ Loaded {len(jobs_database)} jobs from dataset")
+        print(f"[SUCCESS] Loaded {len(jobs_database)} jobs from dataset")
         
         # Pre-compute embeddings
         print("Embeddings generation started...")
         for job in jobs_database:
             job_embeddings_cache[job.job_id] = matcher.create_job_embedding(job)
-        print(f"✅ Pre-computed embeddings for {len(job_embeddings_cache)} jobs")
+        print(f"[SUCCESS] Pre-computed embeddings for {len(job_embeddings_cache)} jobs")
         
     else:
-        print("⚠️ No jobs dataset found, using empty database")
+        print("[WARNING] No jobs dataset found, using empty database")
 
 
 @app.get("/")
