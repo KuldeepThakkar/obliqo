@@ -280,7 +280,26 @@ class ApiClient {
     }
 
     // CV Upload endpoint
-    async uploadCV(file: File): Promise<{ message: string; filename: string; file_url: string }> {
+    async uploadCV(file: File): Promise<{
+        message: string;
+        filename: string;
+        file_url: string;
+        extracted_data: {
+            personal_info?: {
+                full_name?: string;
+                email?: string;
+                phone_number?: string;
+            };
+            social_profiles?: {
+                linkedin?: string;
+                github?: string;
+            };
+            skills?: string[];
+            experience_years?: number;
+            raw_text?: string;
+            error?: string;
+        };
+    }> {
         const formData = new FormData();
         formData.append('file', file);
 

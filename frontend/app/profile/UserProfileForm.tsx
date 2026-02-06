@@ -107,6 +107,7 @@ export default function UserProfileForm() {
     const [cvUploading, setCvUploading] = useState(false);
     const [cvFilename, setCvFilename] = useState('');
     const [cvError, setCvError] = useState('');
+    const [extractedCvData, setExtractedCvData] = useState<any>(null);
 
     useEffect(() => {
         api.getProfile()
@@ -236,29 +237,10 @@ export default function UserProfileForm() {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-10">
-                        {/* 1. Personal Details */}
-                        <section className="space-y-4">
-                            <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">Personal Details</h3>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <input className="input-field" placeholder="Full Name *" value={profile.personal_info.full_name} onChange={e => handleChange('personal_info', 'full_name', e.target.value)} required />
-                                <input className="input-field" placeholder="Email *" type="email" value={profile.personal_info.email} onChange={e => handleChange('personal_info', 'email', e.target.value)} required />
-                                <input className="input-field" placeholder="Phone Number *" value={profile.personal_info.phone_number} onChange={e => handleChange('personal_info', 'phone_number', e.target.value)} required />
-                                <input className="input-field" placeholder="Date of Birth" type="date" value={profile.personal_info.date_of_birth || ''} onChange={e => handleChange('personal_info', 'date_of_birth', e.target.value)} />
-                                <input className="input-field" placeholder="Age" type="number" value={profile.personal_info.age || ''} onChange={e => handleChange('personal_info', 'age', parseInt(e.target.value) || 0)} />
-                                <select className="input-field" value={profile.personal_info.gender || ''} onChange={e => handleChange('personal_info', 'gender', e.target.value)}>
-                                    <option value="">Select Gender</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                <input className="input-field md:col-span-2" placeholder="Address *" value={profile.personal_info.address} onChange={e => handleChange('personal_info', 'address', e.target.value)} required />
-                                <input className="input-field md:col-span-2" placeholder="Emergency Contact Address" value={profile.personal_info.emergency_address || ''} onChange={e => handleChange('personal_info', 'emergency_address', e.target.value)} />
-                            </div>
-                        </section>
-
-                        {/* 2. CV/Resume Upload */}
+                        {/* 1. CV/Resume Upload */}
                         <section className="space-y-4">
                             <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">Upload CV/Resume</h3>
+                            <p className="text-gray-400 text-sm">Upload your CV first and we&apos;ll autofill the form for you!</p>
                             <div className="relative">
                                 <input
                                     type="file"
@@ -269,10 +251,12 @@ export default function UserProfileForm() {
 
                                         setCvUploading(true);
                                         setCvError('');
+                                        setExtractedCvData(null);
 
                                         try {
                                             const result = await api.uploadCV(file);
                                             setCvFilename(result.filename);
+                                            setExtractedCvData(result.extracted_data);
                                             setProfile(prev => ({
                                                 ...prev,
                                                 resume_url: result.file_url,
@@ -288,13 +272,13 @@ export default function UserProfileForm() {
                                     disabled={cvUploading}
                                 />
                                 <div className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${cvUploading ? 'border-purple-400 bg-purple-500/10' :
-                                        profile.has_uploaded_resume ? 'border-green-400 bg-green-500/10' :
-                                            'border-white/20 hover:border-purple-400 hover:bg-purple-500/5'
+                                    profile.has_uploaded_resume ? 'border-green-400 bg-green-500/10' :
+                                        'border-white/20 hover:border-purple-400 hover:bg-purple-500/5'
                                     }`}>
                                     {cvUploading ? (
                                         <div className="flex flex-col items-center gap-2">
                                             <div className="animate-spin w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full"></div>
-                                            <p className="text-purple-300">Uploading your CV...</p>
+                                            <p className="text-purple-300">Uploading and scanning your CV...</p>
                                         </div>
                                     ) : profile.has_uploaded_resume ? (
                                         <div className="flex flex-col items-center gap-2">
@@ -318,6 +302,101 @@ export default function UserProfileForm() {
                                     <p className="text-red-200 text-sm">{cvError}</p>
                                 </div>
                             )}
+
+                            {/* Autofill Button */}
+                            {extractedCvData && !extractedCvData.error && (
+                                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/50 rounded-xl p-4 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="text-white font-semibold flex items-center gap-2">
+                                                🔍 Data Extracted from CV
+                                            </h4>
+                                            <p className="text-gray-400 text-sm">We found the following information</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const data = extractedCvData;
+                                                setProfile(prev => ({
+                                                    ...prev,
+                                                    personal_info: {
+                                                        ...prev.personal_info,
+                                                        full_name: data.personal_info?.full_name || prev.personal_info.full_name,
+                                                        email: data.personal_info?.email || prev.personal_info.email,
+                                                        phone_number: data.personal_info?.phone_number || prev.personal_info.phone_number,
+                                                    },
+                                                    social_profiles: {
+                                                        ...prev.social_profiles,
+                                                        linkedin: data.social_profiles?.linkedin || prev.social_profiles.linkedin,
+                                                        github: data.social_profiles?.github || prev.social_profiles.github,
+                                                    },
+                                                    skills: data.skills?.length > 0 ? data.skills : prev.skills,
+                                                    experience_years: data.experience_years || prev.experience_years,
+                                                }));
+                                                if (data.skills?.length > 0) {
+                                                    setSkillsInput(data.skills.join(', '));
+                                                }
+                                                setExtractedCvData(null);
+                                            }}
+                                            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all transform hover:scale-105"
+                                        >
+                                            ✨ Autofill Form
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        {extractedCvData.personal_info?.full_name && (
+                                            <div className="bg-white/5 rounded px-2 py-1">
+                                                <span className="text-gray-500">Name:</span> <span className="text-white">{extractedCvData.personal_info.full_name}</span>
+                                            </div>
+                                        )}
+                                        {extractedCvData.personal_info?.email && (
+                                            <div className="bg-white/5 rounded px-2 py-1">
+                                                <span className="text-gray-500">Email:</span> <span className="text-white">{extractedCvData.personal_info.email}</span>
+                                            </div>
+                                        )}
+                                        {extractedCvData.personal_info?.phone_number && (
+                                            <div className="bg-white/5 rounded px-2 py-1">
+                                                <span className="text-gray-500">Phone:</span> <span className="text-white">{extractedCvData.personal_info.phone_number}</span>
+                                            </div>
+                                        )}
+                                        {extractedCvData.social_profiles?.linkedin && (
+                                            <div className="bg-white/5 rounded px-2 py-1">
+                                                <span className="text-gray-500">LinkedIn:</span> <span className="text-purple-400">Found</span>
+                                            </div>
+                                        )}
+                                        {extractedCvData.social_profiles?.github && (
+                                            <div className="bg-white/5 rounded px-2 py-1">
+                                                <span className="text-gray-500">GitHub:</span> <span className="text-purple-400">Found</span>
+                                            </div>
+                                        )}
+                                        {extractedCvData.skills?.length > 0 && (
+                                            <div className="bg-white/5 rounded px-2 py-1 col-span-2">
+                                                <span className="text-gray-500">Skills:</span> <span className="text-white">{extractedCvData.skills.length} identified</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* 2. Personal Details */}
+                        <section className="space-y-4">
+                            <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">Personal Details</h3>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <input className="input-field" placeholder="Full Name *" value={profile.personal_info.full_name} onChange={e => handleChange('personal_info', 'full_name', e.target.value)} required />
+                                <input className="input-field" placeholder="Email *" type="email" value={profile.personal_info.email} onChange={e => handleChange('personal_info', 'email', e.target.value)} required />
+                                <input className="input-field" placeholder="Phone Number *" value={profile.personal_info.phone_number} onChange={e => handleChange('personal_info', 'phone_number', e.target.value)} required />
+                                <input className="input-field" placeholder="Date of Birth" type="date" value={profile.personal_info.date_of_birth || ''} onChange={e => handleChange('personal_info', 'date_of_birth', e.target.value)} />
+                                <input className="input-field" placeholder="Age" type="number" value={profile.personal_info.age || ''} onChange={e => handleChange('personal_info', 'age', parseInt(e.target.value) || 0)} />
+                                <select className="input-field" value={profile.personal_info.gender || ''} onChange={e => handleChange('personal_info', 'gender', e.target.value)}>
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <input className="input-field md:col-span-2" placeholder="Address *" value={profile.personal_info.address} onChange={e => handleChange('personal_info', 'address', e.target.value)} required />
+                                <input className="input-field md:col-span-2" placeholder="Emergency Contact Address" value={profile.personal_info.emergency_address || ''} onChange={e => handleChange('personal_info', 'emergency_address', e.target.value)} />
+                            </div>
                         </section>
 
                         {/* 3. Social Profiles */}

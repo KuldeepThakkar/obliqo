@@ -78,7 +78,9 @@ async def root():
 
 @app.post("/api/upload-cv")
 async def upload_cv(file: UploadFile = File(...)):
-    """Upload a CV/Resume file"""
+    """Upload a CV/Resume file and parse it for autofill data"""
+    from app.services.cv_parser import parse_cv
+    
     # Validate file type
     allowed_extensions = {".pdf", ".doc", ".docx"}
     file_ext = Path(file.filename).suffix.lower()
@@ -102,13 +104,21 @@ async def upload_cv(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
     
-    # Return the URL to access the file
+    # Parse CV to extract data
+    try:
+        extracted_data = parse_cv(file_path)
+    except Exception as e:
+        print(f"CV parsing error: {e}")
+        extracted_data = {"error": str(e)}
+    
+    # Return the URL and extracted data
     file_url = f"/uploads/{unique_filename}"
     
     return {
         "message": "CV uploaded successfully",
         "filename": file.filename,
-        "file_url": file_url
+        "file_url": file_url,
+        "extracted_data": extracted_data
     }
 
 
