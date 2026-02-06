@@ -1,3 +1,8 @@
+
+# C H A N G E S  C O M M I T E D 
+
+
+
 # ApplyLess
 
 > **An AI job platform that helps users apply less — and grow more.**

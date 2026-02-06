@@ -55,15 +55,50 @@ class SemanticMatcher:
         # Convert to 0-100 scale
         return float(similarity * 100)
     
-    def rank_jobs(self, profile: UserProfile, jobs: List[Job]) -> List[Tuple[Job, float]]:
-        """Rank jobs by semantic similarity to user profile"""
+    def rank_jobs(self, profile: UserProfile, jobs: List[Job], job_embeddings: Dict[str, np.ndarray] = None) -> List[Tuple[Job, float]]:
+        """Rank jobs by semantic similarity to user profile
+        
+        Args:
+            profile: User profile
+            jobs: List of jobs to rank
+            job_embeddings: Optional dictionary of pre-computed job embeddings {job_id: embedding}
+        """
         user_embedding = self.create_user_embedding(profile)
         
         job_scores = []
-        for job in jobs:
-            job_embedding = self.create_job_embedding(job)
-            similarity_score = self.calculate_similarity(user_embedding, job_embedding)
-            job_scores.append((job, similarity_score))
+        
+        if job_embeddings:
+            # Efficient vectorized calculation
+            # Create lists ensuring order matches
+            valid_jobs = []
+            valid_embeddings = []
+            
+            for job in jobs:
+                if job.job_id in job_embeddings:
+                    valid_jobs.append(job)
+                    valid_embeddings.append(job_embeddings[job.job_id])
+            
+            if not valid_jobs:
+                return []
+                
+            # Stack embeddings into a matrix (N, D)
+            job_matrix = np.vstack(valid_embeddings)
+            user_vector = user_embedding.reshape(1, -1)
+            
+            # Calculate cosine similarity (1, N)
+            similarities = cosine_similarity(user_vector, job_matrix)[0]
+            
+            # Convert to 0-100 scale and zip with jobs
+            for i, job in enumerate(valid_jobs):
+                score = float(similarities[i] * 100)
+                job_scores.append((job, score))
+                
+        else:
+            # Fallback to slower iterative approach
+            for job in jobs:
+                job_embedding = self.create_job_embedding(job)
+                similarity_score = self.calculate_similarity(user_embedding, job_embedding)
+                job_scores.append((job, similarity_score))
         
         # Sort by score descending
         job_scores.sort(key=lambda x: x[1], reverse=True)

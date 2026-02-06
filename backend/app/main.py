@@ -32,26 +32,34 @@ app.add_middleware(
 # In-memory storage (for hackathon - replace with real DB later)
 current_profile: Optional[UserProfile] = None
 jobs_database: List[Job] = []
+job_embeddings_cache: Dict[str, object] = {}  # job_id -> numpy array
 
 
 @app.on_event("startup")
 async def load_jobs():
     """Load jobs from dataset on startup"""
-    global jobs_database
+    global jobs_database, job_embeddings_cache
     
     data_path = Path(__file__).parent.parent / "data" / "jobs_dataset.json"
+    
+    # Initialize the semantic matcher (loads the model)
+    matcher = get_matcher()
+    print("✅ Semantic matcher initialized")
     
     if data_path.exists():
         with open(data_path, 'r', encoding='utf-8') as f:
             jobs_data = json.load(f)
             jobs_database = [Job(**job) for job in jobs_data]
         print(f"✅ Loaded {len(jobs_database)} jobs from dataset")
+        
+        # Pre-compute embeddings
+        print("Embeddings generation started...")
+        for job in jobs_database:
+            job_embeddings_cache[job.job_id] = matcher.create_job_embedding(job)
+        print(f"✅ Pre-computed embeddings for {len(job_embeddings_cache)} jobs")
+        
     else:
         print("⚠️ No jobs dataset found, using empty database")
-    
-    # Initialize the semantic matcher (loads the model)
-    get_matcher()
-    print("✅ Semantic matcher initialized")
 
 
 @app.get("/")
@@ -100,8 +108,8 @@ async def get_job_feed(
     # Get semantic matcher
     matcher = get_matcher()
     
-    # Rank all jobs
-    ranked_jobs = matcher.rank_jobs(current_profile, jobs_database)
+    # Rank all jobs using pre-computed embeddings
+    ranked_jobs = matcher.rank_jobs(current_profile, jobs_database, job_embeddings_cache)
     
     # Generate full match data for each job
     job_matches = []
@@ -142,7 +150,12 @@ async def get_job_detail(job_id: str):
     # Get semantic score
     matcher = get_matcher()
     user_embedding = matcher.create_user_embedding(current_profile)
-    job_embedding = matcher.create_job_embedding(job)
+    
+    if job.job_id in job_embeddings_cache:
+        job_embedding = job_embeddings_cache[job.job_id]
+    else:
+        job_embedding = matcher.create_job_embedding(job)
+        
     semantic_score = matcher.calculate_similarity(user_embedding, job_embedding)
     
     # Generate full match data
@@ -201,7 +214,7 @@ async def get_stats():
         raise HTTPException(status_code=400, detail="Please create a profile first")
     
     matcher = get_matcher()
-    ranked_jobs = matcher.rank_jobs(current_profile, jobs_database)
+    ranked_jobs = matcher.rank_jobs(current_profile, jobs_database, job_embeddings_cache)
     
     decisions = {"Apply": 0, "Wait": 0, "Skip": 0, "Avoid": 0}
     
