@@ -2,15 +2,157 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// Personal Information
+export interface PersonalInfo {
+    full_name: string;
+    email: string;
+    phone_number: string;
+    date_of_birth?: string;
+    age?: number;
+    gender?: string;
+    address: string;
+    emergency_address?: string;
+}
+
+// Social Profiles
+export interface SocialProfiles {
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+    other_profiles?: { platform: string; url: string }[];
+}
+
+// Project Details
+export interface Project {
+    id: string;
+    title: string;
+    description: string;
+    technologies: string[];
+    role?: string;
+    duration?: string;
+    link?: string;
+}
+
+// Work Experience
+export interface WorkExperience {
+    id: string;
+    company: string;
+    position: string;
+    duration: string;
+    location?: string;
+    skills_used: string[];
+    description: string;
+    responsibilities: string[];
+}
+
+// Education
+export interface Education {
+    id: string;
+    institution: string;
+    degree: string;
+    field_of_study: string;
+    start_date: string;
+    end_date: string;
+    grade?: string;
+    achievements?: string[];
+}
+
+// Certifications & Courses
+export interface Certification {
+    id: string;
+    name: string;
+    issuing_organization: string;
+    issue_date: string;
+    expiry_date?: string;
+    credential_id?: string;
+    credential_url?: string;
+}
+
+export interface Course {
+    id: string;
+    name: string;
+    provider: string;
+    completion_date: string;
+    skills_learned: string[];
+}
+
+// Awards & Activities
+export interface Award {
+    id: string;
+    title: string;
+    issuer: string;
+    date: string;
+    description?: string;
+}
+
+export interface ExtracurricularActivity {
+    id: string;
+    activity: string;
+    role?: string;
+    duration?: string;
+    description?: string;
+}
+
+// Medical Background
+export interface MedicalInfo {
+    has_disabilities?: boolean;
+    disability_details?: string;
+    requires_accommodations?: boolean;
+    accommodation_details?: string;
+}
+
+// Work Preferences
+export interface WorkPreferences {
+    work_mode: 'Remote' | 'Onsite' | 'Hybrid' | 'Any';
+    preferred_work_mode?: string;
+    willing_to_relocate?: boolean;
+}
+
 export interface UserProfile {
     user_id: string;
+
+    // Personal Information
+    personal_info: PersonalInfo;
+
+    // About Me
+    about_me?: string;
+
+    // Social Profiles
+    social_profiles: SocialProfiles;
+
+    // Resume
+    resume_url?: string;
+    resume_text?: string;
+    has_uploaded_resume: boolean;
+
+    // Professional Details
     skills: string[];
     experience_years: number;
     experience_level: string;
     preferred_roles: string[];
     preferred_locations: string[];
     career_goals: string;
-    resume_text?: string;
+
+    // Projects
+    projects: Project[];
+
+    // Work Experience
+    work_experience: WorkExperience[];
+
+    // Education
+    education: Education[];
+
+    // Additional Qualifications
+    certifications: Certification[];
+    courses: Course[];
+    awards: Award[];
+    extracurricular_activities: ExtracurricularActivity[];
+
+    // Medical Information
+    medical_info?: MedicalInfo;
+
+    // Work Preferences
+    work_preferences: WorkPreferences;
 }
 
 export interface Job {
